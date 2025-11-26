@@ -10,7 +10,7 @@ public interface RollersIO {
 
     public double leftVelocity = 0;
     public double rightVelocity = 0;
-    
+
     public double leftAppliedVoltage = 0;
     public double rightAppliedVoltage = 0;
   }

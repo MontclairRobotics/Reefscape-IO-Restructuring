@@ -1,8 +1,10 @@
 package frc.robot.subsystems.rollers;
 
+import frc.robot.constants.RollerConstants;
+
 public class RollersIOSim implements RollersIO {
 
-    // Internal simulated motor state
+  // Internal simulated motor state
   private double leftAppliedVoltage = 0.0;
   private double rightAppliedVoltage = 0.0;
 
@@ -13,7 +15,7 @@ public class RollersIOSim implements RollersIO {
   private double rightCurrent = 0.0;
 
   // Simple constants for simulation
-  private static final double FREE_SPEED_RPM = 2000;   // pretend motor max speed
+  private static final double FREE_SPEED_RPM = 2000; // pretend motor max speed
 
   public RollersIOSim() {}
 
@@ -25,8 +27,8 @@ public class RollersIOSim implements RollersIO {
     rightVelocity = (rightAppliedVoltage / 12.0) * FREE_SPEED_RPM;
 
     // Fake linear current model
-    leftCurrent = Math.abs(leftAppliedVoltage / 12.0) * Rollers.ROLLER_STALL_CURRENT;
-    rightCurrent = Math.abs(rightAppliedVoltage / 12.0) * Rollers.ROLLER_STALL_CURRENT;
+    leftCurrent = Math.abs(leftAppliedVoltage / 12.0) * RollerConstants.ROLLER_STALL_CURRENT;
+    rightCurrent = Math.abs(rightAppliedVoltage / 12.0) * RollerConstants.ROLLER_STALL_CURRENT;
 
     // Populate IOInputs
     inputs.leftAppliedVoltage = leftAppliedVoltage;
@@ -37,7 +39,6 @@ public class RollersIOSim implements RollersIO {
 
     inputs.leftCurrent = leftCurrent;
     inputs.rightCurrent = rightCurrent;
-
   }
 
   @Override
@@ -45,5 +46,4 @@ public class RollersIOSim implements RollersIO {
     leftAppliedVoltage = left;
     rightAppliedVoltage = right;
   }
-
 }

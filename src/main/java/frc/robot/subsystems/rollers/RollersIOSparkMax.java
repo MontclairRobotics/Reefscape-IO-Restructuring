@@ -6,6 +6,7 @@ import com.revrobotics.spark.SparkLowLevel.MotorType;
 import com.revrobotics.spark.SparkMax;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
+import frc.robot.constants.RollerConstants;
 import frc.robot.subsystems.rollers.RollersIO.RollersIOInputs;
 
 public class RollersIOSparkMax implements RollersIO {
@@ -16,8 +17,8 @@ public class RollersIOSparkMax implements RollersIO {
 
   public RollersIOSparkMax() {
     // instantiate motor objects
-    leftMotor = new SparkMax(Rollers.LEFT_ID, MotorType.kBrushless);
-    rightMotor = new SparkMax(Rollers.RIGHT_ID, MotorType.kBrushless);
+    leftMotor = new SparkMax(RollerConstants.LEFT_ID, MotorType.kBrushless);
+    rightMotor = new SparkMax(RollerConstants.RIGHT_ID, MotorType.kBrushless);
 
     // create config
     config = new SparkMaxConfig();
