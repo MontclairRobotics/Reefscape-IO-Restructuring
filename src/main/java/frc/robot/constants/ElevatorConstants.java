@@ -59,4 +59,6 @@ public class ElevatorConstants {
 
   public static final int LEFT_MOTOR_ID = 20;
   public static final int RIGHT_MOTOR_ID = 21;
+
+  public static final int SUPPLY_CURRENT_LIMIT = 40; // amps
 }

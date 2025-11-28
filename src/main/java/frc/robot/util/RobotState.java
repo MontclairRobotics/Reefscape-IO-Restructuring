@@ -1,87 +1,92 @@
 package frc.robot.util;
 
 import edu.wpi.first.math.geometry.Rotation2d;
-import frc.robot.RobotContainer;
-//import frc.robot.subsystems.Arm;
+// import frc.robot.subsystems.Arm;
 
 // height should be extension of elevator in meters
 public enum RobotState {
-    L4 (1.2 ,Rotation2d.fromDegrees(-46)),
-    L3 (0.45 + 0.045,Rotation2d.fromDegrees(-31)),
-    L2 (0.025,Rotation2d.fromDegrees(-15)),
-    L1 (0,Rotation2d.fromDegrees(0)),
-    //Intake(0.03, Arm.MAX_ANGLE),
-    IntakeOverPiece(0, Rotation2d.fromDegrees(30.5)),
-    Processor(0, Rotation2d.fromDegrees(-33)),
-    Net(0, Rotation2d.fromDegrees(0)),
-    DrivingAlgae(0, Rotation2d.fromDegrees(0)),
-    //DrivingCoral(0, Arm.MIN_ANGLE),
-    //DrivingNone(0, Intake.getAngle()),
-    L1Algae(.08, Rotation2d.fromDegrees(-15)),
-    L2Algae(0.5, Rotation2d.fromDegrees(-15)),
-    ClimbUp(0.3, Rotation2d.fromDegrees(-66)),
-    ClimbDown(-0.02, Rotation2d.fromDegrees(-66));
-    //Barge(1.2, Arm.MAX_ANGLE);
+  L4(1.2, Rotation2d.fromDegrees(-46)),
+  L3(0.45 + 0.045, Rotation2d.fromDegrees(-31)),
+  L2(0.025, Rotation2d.fromDegrees(-15)),
+  L1(0, Rotation2d.fromDegrees(0)),
+  // Intake(0.03, Arm.MAX_ANGLE),
+  IntakeOverPiece(0, Rotation2d.fromDegrees(30.5)),
+  Processor(0, Rotation2d.fromDegrees(-33)),
+  Net(0, Rotation2d.fromDegrees(0)),
+  DrivingAlgae(0, Rotation2d.fromDegrees(0)),
+  // DrivingCoral(0, Arm.MIN_ANGLE),
+  // DrivingNone(0, Intake.getAngle()),
+  L1Algae(.08, Rotation2d.fromDegrees(-15)),
+  L2Algae(0.5, Rotation2d.fromDegrees(-15)),
+  ClimbUp(0.3, Rotation2d.fromDegrees(-66)),
+  ClimbDown(-0.02, Rotation2d.fromDegrees(-66));
+  // Barge(1.2, Arm.MAX_ANGLE);
 
-    
+  private double height;
+  private Rotation2d angle;
 
-    private double height;
-    private Rotation2d angle;
+  RobotState(double height, Rotation2d angle) {
+    this.height = height;
+    this.angle = angle;
+  }
 
-    RobotState(double height, Rotation2d angle) {
-        this.height = height;
-        this.angle = angle;
+  public RobotState fromInt(int x) {
+    switch (x) {
+      case 4:
+        return L4;
+      case 3:
+        return L3;
+      case 2:
+        return L2;
+      case 1:
+        return L1;
     }
+    return null;
+  }
 
-    public RobotState fromInt(int x){
-        switch(x) {
-            case 4: return L4;
-            case 3: return L3;
-            case 2: return L2;
-            case 1: return L1;
-        }
-        return null;
+  // public static RobotState getDefaultForPiece(GamePiece piece) {
+  //     if (piece == GamePiece.Coral) {
+  //        // return GamePiece.DrivingCoral;
+  //     } else if (piece == GamePiece.Algae) {
+  //         return DrivingAlgae;
+  //     } else {
+  //       //  return DrivingNone;
+  //       return null;
+  //     }
+  // }
+
+  public static RobotState fromString(String s) {
+    switch (s) {
+      case "4":
+        return L4;
+      case "3":
+        return L3;
+      case "2":
+        return L2;
+      case "1":
+        return L1;
     }
+    return null;
+  }
 
-    // public static RobotState getDefaultForPiece(GamePiece piece) {
-    //     if (piece == GamePiece.Coral) {
-    //        // return GamePiece.DrivingCoral;
-    //     } else if (piece == GamePiece.Algae) {
-    //         return DrivingAlgae;
-    //     } else {
-    //       //  return DrivingNone;
-    //       return null;
-    //     }
-    // }
+  public double getHeight() {
+    return height;
+  }
 
-    public static RobotState fromString(String s){
-        switch(s) {
-            case "4": return L4;
-            case "3": return L3;
-            case "2": return L2;
-            case "1": return L1;
-        }
-        return null;
-    }
+  public Rotation2d getAngle() {
+    return angle;
+  }
 
-    public double getHeight() {
-        return height;
-    }
-
-    public Rotation2d getAngle() {
-        return angle;
-    }
-
-    
-    // public static boolean isAt(RobotState state) {
-    //     //checks if arm is at the angle
-    //     if(Math.abs(state.getAngle().getDegrees() - RobotContainer.arm.getEndpointAngle().getDegrees()) < 5) {
-    //         //checks if elevator is at the height
-    //         if(Math.abs(state.getHeight() - RobotContainer.elevator.getExtension()) < .05) {
-    //             return true;
-    //         }
-    //     }
-    //     return false;
-    // }
+  // public static boolean isAt(RobotState state) {
+  //     //checks if arm is at the angle
+  //     if(Math.abs(state.getAngle().getDegrees() -
+  // RobotContainer.arm.getEndpointAngle().getDegrees()) < 5) {
+  //         //checks if elevator is at the height
+  //         if(Math.abs(state.getHeight() - RobotContainer.elevator.getExtension()) < .05) {
+  //             return true;
+  //         }
+  //     }
+  //     return false;
+  // }
 
 }

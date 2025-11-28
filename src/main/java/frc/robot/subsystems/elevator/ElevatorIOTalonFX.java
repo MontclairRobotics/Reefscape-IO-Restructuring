@@ -10,7 +10,6 @@ import com.ctre.phoenix6.controls.VoltageOut;
 import com.ctre.phoenix6.hardware.TalonFX;
 import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.filter.SlewRateLimiter;
@@ -18,148 +17,175 @@ import frc.robot.constants.ElevatorConstants;
 
 public class ElevatorIOTalonFX implements ElevatorIO {
 
-    private TalonFX leftTalonFX;
-    private TalonFX rightTalonFX;
+  // motors
+  private TalonFX leftTalonFX;
+  private TalonFX rightTalonFX;
 
-    private MotionMagicVoltage mm_req;
-    private Slot0Configs slot0Configs;
-    private ElevatorFeedforward elevatorFeedforward;
-    private SlewRateLimiter accelerationLimiter;
+  // Motion Magic + FF
+  private MotionMagicVoltage mm_req;
+  private Slot0Configs slot0Configs;
+  private ElevatorFeedforward elevatorFeedforward;
+  private SlewRateLimiter accelerationLimiter;
 
-    private double setpoint = 0;
+  // keeps track of setpoint
+  private double setpoint = 0;
 
-    public ElevatorIOTalonFX() {
+  public ElevatorIOTalonFX() {
 
-        // instantiates Elevator motors
-        leftTalonFX = new TalonFX(ElevatorConstants.LEFT_MOTOR_ID, "Drivetrain");
-        rightTalonFX = new TalonFX(ElevatorConstants.RIGHT_MOTOR_ID, "Drivetrain");
+    // instantiates Elevator motors
+    leftTalonFX = new TalonFX(ElevatorConstants.LEFT_MOTOR_ID, "Drivetrain");
+    rightTalonFX = new TalonFX(ElevatorConstants.RIGHT_MOTOR_ID, "Drivetrain");
 
-        // current limits to be applied
-        CurrentLimitsConfigs currentLimitConfigs =
-            new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(40);
+    // current limits to be applied
+    CurrentLimitsConfigs currentLimitConfigs =
+        new CurrentLimitsConfigs().withStatorCurrentLimit(80).withSupplyCurrentLimit(40);
 
-        slot0Configs = ElevatorConstants.slot0Configs;
-        // Motor configurations with slot0configs and current limit
-        TalonFXConfiguration leftElevatorConfigs =
-            new TalonFXConfiguration().withSlot0(slot0Configs).withCurrentLimits(currentLimitConfigs);
+    // slot 0 pid gains
+    slot0Configs = ElevatorConstants.slot0Configs;
 
-        TalonFXConfiguration rightElevatorConfigs =
-            new TalonFXConfiguration().withSlot0(slot0Configs).withCurrentLimits(currentLimitConfigs);
+    // Motor configurations with slot0configs and current limit
+    TalonFXConfiguration leftElevatorConfigs =
+        new TalonFXConfiguration().withSlot0(slot0Configs).withCurrentLimits(currentLimitConfigs);
 
-        // Sets MotionMagic constraints
-        MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
-        motionMagicConfigs.MotionMagicCruiseVelocity =
-            ElevatorConstants.MAX_VELOCITY_RPS; // Target cruise velocity of 80 rps
-        motionMagicConfigs.MotionMagicAcceleration =
-            ElevatorConstants.MAX_ACCEL_RPS; // Target acceleration of 160 rps/s (0.5 seconds)
-        motionMagicConfigs.MotionMagicJerk = 2000; // Target jerk of 1600 rps/s/s (0.1 seconds)
+    TalonFXConfiguration rightElevatorConfigs =
+        new TalonFXConfiguration().withSlot0(slot0Configs).withCurrentLimits(currentLimitConfigs);
 
-        // Applies MotionMagic configs to motor configs
-        leftElevatorConfigs.MotionMagic = motionMagicConfigs;
-        rightElevatorConfigs.MotionMagic = motionMagicConfigs;
+    // Sets MotionMagic constraints
+    MotionMagicConfigs motionMagicConfigs = new MotionMagicConfigs();
 
-        // Applies motor configs to motors
-        leftTalonFX.getConfigurator().apply(leftElevatorConfigs);
-        rightTalonFX.getConfigurator().apply(rightElevatorConfigs);
+    motionMagicConfigs.MotionMagicCruiseVelocity =
+        ElevatorConstants.MAX_VELOCITY_RPS; // Target cruise velocity of 80 rps
+    motionMagicConfigs.MotionMagicAcceleration =
+        ElevatorConstants.MAX_ACCEL_RPS; // Target acceleration of 160 rps/s (0.5 seconds)
+    motionMagicConfigs.MotionMagicJerk = 2000; // Target jerk of 1600 rps/s/s (0.1 seconds)
 
-        // Right TalonFX does whatever the left TalonFX does
-        rightTalonFX.setControl(new Follower(ElevatorConstants.LEFT_MOTOR_ID, true));
+    // Applies MotionMagic configs to motor configs
+    leftElevatorConfigs.MotionMagic = motionMagicConfigs;
+    rightElevatorConfigs.MotionMagic = motionMagicConfigs;
 
-        // Brake mode
-        leftTalonFX.setNeutralMode(NeutralModeValue.Brake);
-        rightTalonFX.setNeutralMode(NeutralModeValue.Brake);
+    // Applies motor configs to motors
+    leftTalonFX.getConfigurator().apply(leftElevatorConfigs);
+    rightTalonFX.getConfigurator().apply(rightElevatorConfigs);
 
-        // Zeroes elevator upon initialization
-        leftTalonFX.setPosition(0);
-        rightTalonFX.setPosition(0);
+    // Right TalonFX does whatever the left TalonFX does
+    rightTalonFX.setControl(new Follower(ElevatorConstants.LEFT_MOTOR_ID, true));
 
-        mm_req = new MotionMagicVoltage(0);
-        accelerationLimiter = new SlewRateLimiter(5); 
+    // Brake mode
+    leftTalonFX.setNeutralMode(NeutralModeValue.Brake);
+    rightTalonFX.setNeutralMode(NeutralModeValue.Brake);
 
+    // Zeroes elevator upon initialization
+    leftTalonFX.setPosition(0);
+    rightTalonFX.setPosition(0);
 
-        elevatorFeedforward = new ElevatorFeedforward(slot0Configs.kS, slot0Configs.kG, slot0Configs.kV);
-    }
+    // Motion Magic Voltage object
+    mm_req = new MotionMagicVoltage(0);
 
-    public double calculateExtensionMeters() {
-        double leftDisplacement = leftTalonFX.getPosition().refresh().getValueAsDouble();
-        double rightDisplacement = rightTalonFX.getPosition().refresh().getValueAsDouble();
-        return (leftDisplacement + rightDisplacement) / 2.0 * ElevatorConstants.METERS_PER_ROTATION;
-    }
+    // accel limiter for joystick control
+    accelerationLimiter = new SlewRateLimiter(5);
 
-    @Override
-    public void updateInputs(ElevatorIOInputs inputs) {
-        inputs.extensionMeters = calculateExtensionMeters();
-        inputs.velocityMetersPerSec =
-            leftTalonFX.getVelocity().refresh().getValueAsDouble()
-                * ElevatorConstants.METERS_PER_ROTATION;
+    // Feedforward for manual control
+    elevatorFeedforward =
+        new ElevatorFeedforward(slot0Configs.kS, slot0Configs.kG, slot0Configs.kV);
+  }
 
-        inputs.leftPositionRot = leftTalonFX.getPosition().refresh().getValueAsDouble();
-        inputs.rightPositionRot = rightTalonFX.getPosition().refresh().getValueAsDouble();
+  public double calculateExtensionMeters() {
+    double leftDisplacement = leftTalonFX.getPosition().refresh().getValueAsDouble();
+    double rightDisplacement = rightTalonFX.getPosition().refresh().getValueAsDouble();
+    return (leftDisplacement + rightDisplacement) / 2.0 * ElevatorConstants.METERS_PER_ROTATION;
+  }
 
-        inputs.leftAppliedVoltage = leftTalonFX.getMotorVoltage().refresh().getValueAsDouble();
-        inputs.rightAppliedVoltage = rightTalonFX.getMotorVoltage().refresh().getValueAsDouble();
+  @Override
+  public void updateInputs(ElevatorIOInputs inputs) {
+    inputs.extensionMeters = calculateExtensionMeters();
+    inputs.velocityMetersPerSec =
+        leftTalonFX.getVelocity().getValueAsDouble() * ElevatorConstants.METERS_PER_ROTATION;
 
-        inputs.leftTempCelsius = leftTalonFX.getDeviceTemp().refresh().getValueAsDouble();
-        inputs.rightTempCelsius = rightTalonFX.getDeviceTemp().refresh().getValueAsDouble();
+    inputs.leftPositionRot = leftTalonFX.getPosition().getValueAsDouble();
+    inputs.rightPositionRot = rightTalonFX.getPosition().getValueAsDouble();
 
-        inputs.leftCurrent = leftTalonFX.getStatorCurrent().refresh().getValueAsDouble();
-        inputs.rightCurrent = rightTalonFX.getStatorCurrent().refresh().getValueAsDouble();
-    }
+    inputs.leftAppliedVoltage = leftTalonFX.getMotorVoltage().getValueAsDouble();
+    inputs.rightAppliedVoltage = rightTalonFX.getMotorVoltage().getValueAsDouble();
 
-    /**
-     * Sets the elevator motors to a given position in rotations
-     *
-     * @param rotations the number of rotations to set the elevator motors to
-     */
-    @Override
-    public void setPosition(double rotations) {
-        rotations = MathUtil.clamp(rotations, 0, ElevatorConstants.MAX_ROTATIONS);
-        leftTalonFX.setControl(mm_req.withPosition(rotations).withSlot(0).withEnableFOC(true));
-    }
+    inputs.leftTempCelsius = leftTalonFX.getDeviceTemp().getValueAsDouble();
+    inputs.rightTempCelsius = rightTalonFX.getDeviceTemp().getValueAsDouble();
 
-    @Override
-    public void setVoltage(double voltage) {
-        leftTalonFX.setControl(new VoltageOut(voltage).withEnableFOC(true));
-    }
+    inputs.leftCurrent = leftTalonFX.getStatorCurrent().getValueAsDouble();
+    inputs.rightCurrent = rightTalonFX.getStatorCurrent().getValueAsDouble();
+  }
 
-    @Override
-    public void stop() {
-        leftTalonFX.setControl(new VoltageOut(0));
-    }
+  /**
+   * Sets the elevator motors to a given position in rotations
+   *
+   * @param rotations the number of rotations to set the elevator motors to
+   */
+  @Override
+  public void setPosition(double rotations) {
+    rotations = MathUtil.clamp(rotations, 0, ElevatorConstants.MAX_ROTATIONS);
+    leftTalonFX.setControl(mm_req.withPosition(rotations).withSlot(0).withEnableFOC(true));
+  }
 
-    
-    @Override 
-    public void resetEncoders(double rotationValue) {
-        leftTalonFX.setPosition(rotationValue);
-        rightTalonFX.setPosition(rotationValue);
-    }
+  @Override
+  public void setVoltage(double voltage) {
+    leftTalonFX.setControl(new VoltageOut(voltage).withEnableFOC(true));
+  }
 
-    @Override
-    public void setCurrentLimits(double limit) {
-        CurrentLimitsConfigs c = new CurrentLimitsConfigs()
-            .withStatorCurrentLimit(limit)
-            .withSupplyCurrentLimit(40);
-        leftTalonFX.getConfigurator().apply(c);
-        rightTalonFX.getConfigurator().apply(c);
-    }
+  @Override
+  public void stop() {
+    leftTalonFX.setControl(new VoltageOut(0));
+  }
 
-    @Override
-    public double stationaryElevatorFFVoltage() {
-        return elevatorFeedforward.calculate(0, 0);
-    }
+  @Override
+  public void resetEncoders(double rotationValue) {
+    leftTalonFX.setPosition(rotationValue);
+    rightTalonFX.setPosition(rotationValue);
+  }
 
-    @Override 
-    public void resetAccelLimiter() {
-        accelerationLimiter.reset(0);
-    }
+  @Override
+  public void setCurrentLimits(double statorLimit) {
+    CurrentLimitsConfigs c =
+        new CurrentLimitsConfigs()
+            .withStatorCurrentLimit(statorLimit)
+            .withSupplyCurrentLimit(ElevatorConstants.SUPPLY_CURRENT_LIMIT);
+    leftTalonFX.getConfigurator().apply(c);
+    rightTalonFX.getConfigurator().apply(c);
+  }
 
-    @Override
-    public void setClimbGains() {
-        leftTalonFX.getConfigurator().apply(new Slot0Configs().withKP(1.4973 * 3).withKI(0).withKD(0.098147)
-        .withKS(0.058548).withKV(0.10758).withKA(0.0013553).withKG(0.22)
-        .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
-        rightTalonFX.getConfigurator().apply(new Slot0Configs().withKP(1.4973 * 3).withKI(0).withKD(0.098147)
-        .withKS(0.058548).withKV(0.10758).withKA(0.0013553).withKG(0.22)
-        .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
-    }
+  @Override
+  public double stationaryElevatorFFVoltage() {
+    return elevatorFeedforward.calculate(0, 0);
+  }
+
+  @Override
+  public void resetAccelLimiter() {
+    accelerationLimiter.reset(0);
+  }
+
+  @Override
+  public void setClimbGains() {
+    leftTalonFX
+        .getConfigurator()
+        .apply(
+            new Slot0Configs()
+                .withKP(1.4973 * 3)
+                .withKI(0)
+                .withKD(0.098147)
+                .withKS(0.058548)
+                .withKV(0.10758)
+                .withKA(0.0013553)
+                .withKG(0.22)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
+    rightTalonFX
+        .getConfigurator()
+        .apply(
+            new Slot0Configs()
+                .withKP(1.4973 * 3)
+                .withKI(0)
+                .withKD(0.098147)
+                .withKS(0.058548)
+                .withKV(0.10758)
+                .withKA(0.0013553)
+                .withKG(0.22)
+                .withStaticFeedforwardSign(StaticFeedforwardSignValue.UseClosedLoopSign));
+  }
 }

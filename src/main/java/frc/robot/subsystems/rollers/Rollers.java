@@ -15,7 +15,6 @@ public class Rollers extends SubsystemBase {
   private final RollersIOInputsAutoLogged inputs = new RollersIOInputsAutoLogged();
 
   private final Debouncer isStalledDebouncer = new Debouncer(0.05, DebounceType.kRising);
-  private final Debouncer isHeldDebouncer = new Debouncer(0.1, DebounceType.kFalling);
 
   private GamePiece heldPiece = GamePiece.Coral;
 
@@ -111,9 +110,6 @@ public class Rollers extends SubsystemBase {
             () -> {
               this.heldPiece = GamePiece.Coral;
             });
-    // .until(this::hasPiece).finallyDo(() ->
-    // RobotContainer.leds.playLEDPattern(LEDs.blink(Color.kGreen), 1));
-
   }
 
   public Command holdCoralCommand() {

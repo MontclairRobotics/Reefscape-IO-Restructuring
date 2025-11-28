@@ -7,24 +7,33 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
+import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
+import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import frc.robot.constants.ElevatorConstants;
-import frc.robot.util.Elastic;
-import frc.robot.util.Elastic.Notification;
-import frc.robot.util.Elastic.Notification.NotificationLevel;
 
 public class ElevatorIOSim implements ElevatorIO {
 
+  // represents elevator motors
   private final DCMotor elevatorMotors = DCMotor.getKrakenX60Foc(2);
 
+  // keeps track of the voltage applied
   private double appliedVoltage = 0;
 
-  double lastSpeed = 0;
+  // for calculating accel
   double lastTime = Timer.getFPGATimestamp();
   double lastVelocity;
 
+  // PID + FF
   private ProfiledPIDController pidController;
   public ElevatorFeedforward elevatorFeedforward;
 
+  // Visualization
+  private Mechanism2d mechanism;
+  private MechanismRoot2d rootMechanism;
+  private MechanismLigament2d elevatorMechanism;
+
+  // for modeling elevator movement
   private ElevatorSim sim =
       new ElevatorSim(
           elevatorMotors,
@@ -37,25 +46,33 @@ public class ElevatorIOSim implements ElevatorIO {
           0.0);
 
   public ElevatorIOSim() {
-    // create feedforward
+    // creates feedforward
     elevatorFeedforward =
         new ElevatorFeedforward(
             ElevatorConstants.slot0Configs.kS,
             ElevatorConstants.slot0Configs.kG,
             ElevatorConstants.slot0Configs.kV);
 
-    // create pid controller
+    // creates pid controller
     pidController =
         new ProfiledPIDController(
             8.2697,
             0,
             0.068398,
             new Constraints(ElevatorConstants.MAX_VELOCITY_RPS, ElevatorConstants.MAX_ACCEL_RPS));
+
+    // Visualization
+    mechanism = new Mechanism2d(4, 4);
+    rootMechanism = mechanism.getRoot("ElevatorBottom", 2, 0);
+    elevatorMechanism =
+        rootMechanism.append(
+            new MechanismLigament2d("Elevator", ElevatorConstants.STARTING_HEIGHT, 90));
   }
 
   @Override
   public void updateInputs(ElevatorIOInputs inputs) {
-    sim.update(0.02);
+    sim.update(0.02); // iterate elevator sim
+    // update inputs
     inputs.extensionMeters = sim.getPositionMeters();
     inputs.velocityMetersPerSec = sim.getVelocityMetersPerSecond();
     inputs.leftAppliedVoltage = appliedVoltage;
@@ -64,40 +81,35 @@ public class ElevatorIOSim implements ElevatorIO {
 
   @Override
   public void setVoltage(double voltage) {
-    appliedVoltage = voltage;
-    sim.setInputVoltage(voltage);
+    appliedVoltage = voltage; // logs voltage
+    sim.setInputVoltage(voltage); // sets voltage to sim
   }
 
   @Override
   public void setPosition(double rotations) {
-    if (rotations > ElevatorConstants.MAX_ROTATIONS) {
-      Elastic.sendNotification(
-          new Notification(
-              NotificationLevel.WARNING,
-              "Setting the elevator height outside of range",
-              "Somebody is messing up the button setting in robot container by setting the height to higher the range",
-              5000));
-    }
-    if (rotations < 0) {
-      Elastic.sendNotification(
-          new Notification(
-              NotificationLevel.WARNING,
-              "Setting the elevator height outside of range",
-              "Somebody is messing up the button setting in robot container by setting the height to lower than 0 (who is doing this???! WTF??)",
-              5000));
-    }
+    double goalRotations =
+        MathUtil.clamp(rotations, 0, ElevatorConstants.MAX_ROTATIONS); // clamps rotations
+    double pidOutputVoltage =
+        pidController.calculate(
+            sim.getPositionMeters() * ElevatorConstants.ROTATIONS_PER_METER, goalRotations);
 
-    double goalRotations = MathUtil.clamp(rotations, 0, ElevatorConstants.MAX_ROTATIONS);
-    double pidOutputVoltage = pidController.calculate(sim.getPositionMeters() * ElevatorConstants.ROTATIONS_PER_METER, goalRotations);
-    double accel = (pidController.getSetpoint().velocity * ElevatorConstants.METERS_PER_ROTATION - lastVelocity) / (Timer.getFPGATimestamp() - lastTime);
+    // for calculating FF
+    double accel =
+        (pidController.getSetpoint().velocity * ElevatorConstants.METERS_PER_ROTATION
+                - lastVelocity)
+            / (Timer.getFPGATimestamp() - lastTime);
 
+    // Updates values for calculating accel
     lastTime = Timer.getFPGATimestamp();
     lastVelocity = sim.getVelocityMetersPerSecond();
 
+    // FF
     double ffVoltage = elevatorFeedforward.calculate(pidController.getSetpoint().velocity, accel);
+
+    // Adds FF + PID voltages
     double outputVoltage = MathUtil.clamp(pidOutputVoltage + ffVoltage, -12, 12);
 
-    appliedVoltage = outputVoltage;
-    sim.setInputVoltage(outputVoltage);
+    appliedVoltage = outputVoltage; // logs voltage
+    sim.setInputVoltage(outputVoltage); // sets voltage to sim
   }
 }

@@ -30,13 +30,17 @@ public interface ElevatorIO {
 
   public default void stop() {}
 
-  public default boolean atSetpoint() {return false;}
+  public default boolean atSetpoint() {
+    return false;
+  }
 
   public default void resetEncoders(double rotationValue) {}
 
   public default void setCurrentLimits(double limit) {}
 
-  public default double stationaryElevatorFFVoltage() {return 0;}
+  public default double stationaryElevatorFFVoltage() {
+    return 0;
+  }
 
   public default void resetAccelLimiter() {}
 

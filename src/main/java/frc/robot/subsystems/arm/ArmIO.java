@@ -1,0 +1,54 @@
+package frc.robot.subsystems.arm;
+
+import edu.wpi.first.math.geometry.Rotation2d;
+import org.littletonrobotics.junction.AutoLog;
+
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+
+public interface ArmIO {
+  @AutoLog
+  public static class ArmIOInputs {
+    public double appliedVoltage;
+    public double current;
+    public double tempCelsius;
+
+    public Rotation2d armAngle;
+    public Rotation2d elbowAngle;
+    public Rotation2d forearmAngle;
+
+    public boolean encoderConnected;
+    public Rotation2d forearmSetpoint;
+  }
+
+  public void updateInputs(ArmIOInputs inputs);
+
+  public void setVoltage(double voltage);
+
+  public void setForearmAngle(Rotation2d angle);
+
+  public default double calculateStationaryFeedforward() {return 0;}
+
+  public void stop();
+
+  // accessors
+  /**
+   * @return the angle of the endpoint relative to the horizontal
+   */
+  public Rotation2d getForearmAngle();
+  /**
+   * @return the angle between the arm and the forearm (wrist)
+   */
+  public Rotation2d getElbowAngle();
+  /**
+   * @return the angle fo the arm relative to the horizontal
+   */
+  public Rotation2d getArmAngle();
+
+  public boolean atSetpoint();
+
+  public double getPercentRotation();
+
+  public void setIdleMode(IdleMode mode);
+
+  public void resetPIDController();
+}
