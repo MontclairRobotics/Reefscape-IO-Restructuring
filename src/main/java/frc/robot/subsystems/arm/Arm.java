@@ -18,6 +18,7 @@ public class Arm extends SubsystemBase {
 
     private ArmIO io;
     private ArmIOInputsAutoLogged inputs = new ArmIOInputsAutoLogged();
+
     private RobotState targetState;
 
     public Arm(ArmIO io) {
@@ -27,7 +28,7 @@ public class Arm extends SubsystemBase {
     @Override
     public void periodic() {
         io.updateInputs(inputs);
-        Logger.processInputs("Rollers", inputs);
+        Logger.processInputs("Arm", inputs);
     }
 
     public boolean atSetpoint() {

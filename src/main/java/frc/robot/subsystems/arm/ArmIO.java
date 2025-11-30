@@ -26,21 +26,22 @@ public interface ArmIO {
 
   public void setForearmAngle(Rotation2d angle);
 
-  public default double calculateStationaryFeedforward() {return 0;}
+  public double calculateStationaryFeedforward();
 
   public void stop();
 
-  // accessors
   /**
-   * @return the angle of the endpoint relative to the horizontal
+   * @return the angle of the endpoint (second joint) relative to the horizontal
    */
   public Rotation2d getForearmAngle();
+  
   /**
-   * @return the angle between the arm and the forearm (wrist)
+   * @return the angle between the arm and the forearm (the angle between the two joints)
    */
   public Rotation2d getElbowAngle();
+
   /**
-   * @return the angle fo the arm relative to the horizontal
+   * @return the angle of the arm (joint 1) relative to the horizontal
    */
   public Rotation2d getArmAngle();
 

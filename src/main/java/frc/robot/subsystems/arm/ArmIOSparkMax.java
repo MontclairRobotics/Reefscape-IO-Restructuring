@@ -15,6 +15,7 @@ import edu.wpi.first.math.trajectory.TrapezoidProfile;
 import edu.wpi.first.wpilibj.DutyCycleEncoder;
 import frc.robot.constants.ArmConstants;
 import frc.robot.util.PoseUtils;
+import frc.robot.util.AngleUtils;
 
 public class ArmIOSparkMax implements ArmIO {
 
@@ -29,6 +30,7 @@ public class ArmIOSparkMax implements ArmIO {
     private RelativeEncoder relativeEncoder;
     private DutyCycleEncoder armEncoder;
 
+    // tracks setpoint
     private Rotation2d setpoint;
 
     public ArmIOSparkMax() {
@@ -48,15 +50,6 @@ public class ArmIOSparkMax implements ArmIO {
         motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
     }
 
-    /** WRAPS THE ANGLE FROM -180 TO 180 DEGREES */
-    public static Rotation2d wrapAngle(Rotation2d ang) {
-        double angle = ang.getDegrees();
-        angle = (angle + 180) % 360; // Step 1 and 2
-        if (angle < 0) {
-        angle += 360; // Make sure it's positive
-        }
-        return Rotation2d.fromDegrees(angle - 180); // Step 3
-    }
 
     public void updateInputs(ArmIOInputs inputs) {
         inputs.appliedVoltage = motor.getAppliedOutput();
@@ -82,7 +75,8 @@ public class ArmIOSparkMax implements ArmIO {
             MathUtil.clamp(
                 angle.getRotations(),
                 ArmConstants.FOREARM_MIN_ANGLE.getRotations(),
-                ArmConstants.FOREARM_MAX_ANGLE.getRotations());
+                ArmConstants.FOREARM_MAX_ANGLE.getRotations()
+            );
 
         double voltage = pidController.calculate(getForearmAngle().getRotations(), target) * 5;
         voltage = MathUtil.clamp(voltage, -ArmConstants.VOLTAGE_LIMIT, ArmConstants.VOLTAGE_LIMIT);
@@ -90,8 +84,8 @@ public class ArmIOSparkMax implements ArmIO {
     }
 
     public double calculateStationaryFeedforward() {
-        double voltage = armFeedforward.calculate(getElbowAngle().getRadians(), 0);
-        return getElbowAngle().getDegrees() > 0 ? voltage : -voltage;
+        double voltage = armFeedforward.calculate(getArmAngle().getRadians(), 0);
+        return getArmAngle().getDegrees() > 0 ? voltage : -voltage;
     }
 
     public void stop() {
@@ -110,11 +104,11 @@ public class ArmIOSparkMax implements ArmIO {
 
     public Rotation2d getArmAngle() {
         if (armEncoder.isConnected()) {
-        return wrapAngle(Rotation2d.fromRotations(armEncoder.get()));
+            return AngleUtils.wrapAngle(Rotation2d.fromRotations(armEncoder.get()));
         } else {
-        return wrapAngle(
-            Rotation2d.fromRotations(
-                (relativeEncoder.getPosition() / ArmConstants.ARM_TO_MOTOR) % 1));
+            return AngleUtils.wrapAngle(
+                Rotation2d.fromRotations(
+                    (relativeEncoder.getPosition() / ArmConstants.ARM_TO_MOTOR) % 1));
         }
     }
 

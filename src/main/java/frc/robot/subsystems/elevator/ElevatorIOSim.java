@@ -1,8 +1,12 @@
 package frc.robot.subsystems.elevator;
 
+import com.ctre.phoenix6.configs.Slot0Configs;
+import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
+
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
+import edu.wpi.first.math.filter.SlewRateLimiter;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.Timer;
@@ -19,6 +23,9 @@ public class ElevatorIOSim implements ElevatorIO {
 
   // keeps track of the voltage applied
   private double appliedVoltage = 0;
+
+  private SlewRateLimiter accelerationLimiter;
+
 
   // for calculating accel
   double lastTime = Timer.getFPGATimestamp();
@@ -52,6 +59,9 @@ public class ElevatorIOSim implements ElevatorIO {
             ElevatorConstants.slot0Configs.kS,
             ElevatorConstants.slot0Configs.kG,
             ElevatorConstants.slot0Configs.kV);
+
+    // accel limiter for joystick control
+    accelerationLimiter = new SlewRateLimiter(5);
 
     // creates pid controller
     pidController =
@@ -112,4 +122,30 @@ public class ElevatorIOSim implements ElevatorIO {
     appliedVoltage = outputVoltage; // logs voltage
     sim.setInputVoltage(outputVoltage); // sets voltage to sim
   }
+
+  public void stop() {
+    setVoltage(0);
+  }
+
+  public void resetEncoders(double rotationValue) {
+    sim.setState(0, 0); //TODO: is this correct?
+  }
+
+  public double stationaryElevatorFFVoltage() {
+    return elevatorFeedforward.calculate(0, 0);
+  }
+
+  public void resetAccelLimiter() {
+    accelerationLimiter.reset(0);
+  }
+
+  @Override
+  public void setClimbGains() {
+    pidController.setPID(1.4973 * 3, 0, 0.098147);
+    elevatorFeedforward.setKa(0.0013553);
+    elevatorFeedforward.setKg(0.22);
+    elevatorFeedforward.setKs(0.058548);
+    elevatorFeedforward.setKv(0.10758);
+  }
+
 }

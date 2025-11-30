@@ -142,16 +142,6 @@ public class ElevatorIOTalonFX implements ElevatorIO {
   }
 
   @Override
-  public void setCurrentLimits(double statorLimit) {
-    CurrentLimitsConfigs c =
-        new CurrentLimitsConfigs()
-            .withStatorCurrentLimit(statorLimit)
-            .withSupplyCurrentLimit(ElevatorConstants.SUPPLY_CURRENT_LIMIT);
-    leftTalonFX.getConfigurator().apply(c);
-    rightTalonFX.getConfigurator().apply(c);
-  }
-
-  @Override
   public double stationaryElevatorFFVoltage() {
     return elevatorFeedforward.calculate(0, 0);
   }

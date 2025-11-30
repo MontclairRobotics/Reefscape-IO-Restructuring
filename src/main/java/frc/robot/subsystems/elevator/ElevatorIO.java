@@ -22,27 +22,19 @@ public interface ElevatorIO {
     public double rightCurrent = 0;
   }
 
-  public default void updateInputs(ElevatorIOInputs inputs) {}
+  public void updateInputs(ElevatorIOInputs inputs);
 
-  public default void setPosition(double rotations) {}
+  public void setPosition(double rotations);
 
-  public default void setVoltage(double voltage) {}
+  public void setVoltage(double voltage);
 
-  public default void stop() {}
+  public void stop();
 
-  public default boolean atSetpoint() {
-    return false;
-  }
+  public void resetEncoders(double rotationValue);
 
-  public default void resetEncoders(double rotationValue) {}
+  public double stationaryElevatorFFVoltage();
 
-  public default void setCurrentLimits(double limit) {}
+  public void resetAccelLimiter();
 
-  public default double stationaryElevatorFFVoltage() {
-    return 0;
-  }
-
-  public default void resetAccelLimiter() {}
-
-  public default void setClimbGains() {}
+  public void setClimbGains();
 }

@@ -49,18 +49,6 @@ public class Elevator extends SubsystemBase {
     return Math.pow(percentExtension, 0.3) + 0.8 * percentExtension + 1;
   }
 
-  /**
-   * Sets new stator current limit to both motors
-   *
-   * @param statorLimit the stator limit in amps, to apply
-   */
-  public void setCurrentLimit(double statorLimit) {
-    io.setCurrentLimits(statorLimit);
-  }
-
-  public Command setCurrentLimitCommand(double limit) {
-    return runOnce(() -> setCurrentLimit(limit));
-  }
 
   /**
    * @return extension of elevator from 0, in meters

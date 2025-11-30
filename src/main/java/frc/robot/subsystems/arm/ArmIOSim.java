@@ -5,26 +5,32 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import com.revrobotics.spark.config.SparkMaxConfig;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.controller.ArmFeedforward;
 import edu.wpi.first.math.controller.PIDController;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.simulation.DutyCycleEncoderSim;
 import edu.wpi.first.wpilibj.simulation.SingleJointedArmSim;
 import frc.robot.constants.ArmConstants;
+import frc.robot.util.AngleUtils;
 import frc.robot.util.PoseUtils;
 
 public class ArmIOSim implements ArmIO {
 
     private DutyCycleEncoderSim encoder;
-    private SingleJointedArmSim sim;
+
+    private SingleJointedArmSim sim; //representing our double jointed arm as a single jointed arm sim of the first joint, 
+    //and chose to ignore the second joint :)
 
     private PIDController pidController;
+    private ArmFeedforward armFeedforward;
 
     private Rotation2d setpoint;
     private double appliedVoltage;
 
     public ArmIOSim() {
         pidController = new PIDController(43.555, 0, 0.9555);
+        armFeedforward = new ArmFeedforward(0, 0.2, 0);
 
         encoder.setConnected(true);
 
@@ -60,16 +66,15 @@ public class ArmIOSim implements ArmIO {
     }
 
     public void setForearmAngle(Rotation2d angle) {
-        angle.minus(getElbowAngle());
         setpoint = angle;
 
         double target =
             MathUtil.clamp(
                 angle.getRotations(),
-                ArmConstants.ARM_MIN_ANGLE.getRotations(),
-                ArmConstants.ARM_MAX_ANGLE.getRotations());
+                ArmConstants.FOREARM_MIN_ANGLE.getRotations(),
+                ArmConstants.FOREARM_MAX_ANGLE.getRotations());
 
-        double voltage = pidController.calculate(getArmAngle().getRotations(), target) * 5;
+        double voltage = pidController.calculate(getForearmAngle().getRotations(), target) * 5;
         voltage = MathUtil.clamp(voltage, -ArmConstants.VOLTAGE_LIMIT, ArmConstants.VOLTAGE_LIMIT);
         setVoltage(-voltage);
         encoder.set(sim.getAngleRads());
@@ -90,7 +95,7 @@ public class ArmIOSim implements ArmIO {
     }
 
     public Rotation2d getArmAngle() {
-        return ArmIOSparkMax.wrapAngle(Rotation2d.fromRadians(encoder.get()));
+        return AngleUtils.wrapAngle(Rotation2d.fromRadians(encoder.get()));
     }
 
     public boolean atSetpoint() {
@@ -107,5 +112,10 @@ public class ArmIOSim implements ArmIO {
 
     public void resetPIDController() {
         pidController.reset();
+    }
+
+    public double calculateStationaryFeedforward() {
+        double voltage = armFeedforward.calculate(getArmAngle().getRadians(), 0);
+        return getArmAngle().getDegrees() > 0 ? voltage : -voltage;
     }
 }
