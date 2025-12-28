@@ -2,16 +2,17 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "type": "wpilib",
-      "name": "WPILib Desktop Debug",
+      "type": "java",
+      "name": "Current File",
       "request": "launch",
-      "desktop": true
+      "mainClass": "${file}"
     },
     {
-      "type": "wpilib",
-      "name": "WPILib roboRIO Debug",
+      "type": "java",
+      "name": "Main",
       "request": "launch",
-      "desktop": false
+      "mainClass": "frc.robot.Main",
+      "projectName": "DrWomp-AdvantageKit"
     }
   ]
 }

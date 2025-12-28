@@ -1,6 +1,6 @@
 package frc.robot.subsystems.rollers;
 
-import frc.robot.constants.RollerConstants;
+import frc.robot.Constants.RollerConstants;
 
 public class RollersIOSim implements RollersIO {
 
@@ -46,4 +46,16 @@ public class RollersIOSim implements RollersIO {
     leftAppliedVoltage = left;
     rightAppliedVoltage = right;
   }
+
+  @Override
+  public void setVoltage(double voltage) {}
+
+  @Override
+  public void set(double output) {}
+
+  @Override
+  public void set(double leftOutput, double rightOutput) {}
+
+  @Override
+  public void stop() {}
 }

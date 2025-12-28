@@ -16,6 +16,7 @@ package frc.robot;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.DriveMotorArrangement;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerMotorArrangement;
+import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
@@ -101,6 +102,15 @@ public class Robot extends LoggedRobot {
     robotContainer = new RobotContainer();
   }
 
+  /** Code to run on robot boot up. */
+  @Override
+  public void robotInit() {
+    if (isSimulation()) {
+      // Do not spam the logs with "Button x on port y not available" log messages.
+      DriverStation.silenceJoystickConnectionWarning(true);
+    }
+  }
+
   /** This function is called periodically during all modes. */
   @Override
   public void robotPeriodic() {
@@ -117,11 +127,15 @@ public class Robot extends LoggedRobot {
 
     // Return to non-RT thread priority (do not modify the first argument)
     // Threads.setCurrentThreadPriority(false, 10);
+    // Logger.recordOutput("RobotPose", new Pose2d());
+    // Logger.recordOupput("ZeroedComponent")
   }
 
   /** This function is called once when the robot is disabled. */
   @Override
-  public void disabledInit() {}
+  public void disabledInit() {
+    robotContainer.resetSimulation();
+  }
 
   /** This function is called periodically when disabled. */
   @Override
@@ -175,5 +189,8 @@ public class Robot extends LoggedRobot {
 
   /** This function is called periodically whilst in simulation. */
   @Override
-  public void simulationPeriodic() {}
+  public void simulationPeriodic() {
+    RobotContainer.drivetrain.mapleSimSwerveDrivetrain.update();
+    robotContainer.displaySimFieldToAdvantageScope();
+  }
 }

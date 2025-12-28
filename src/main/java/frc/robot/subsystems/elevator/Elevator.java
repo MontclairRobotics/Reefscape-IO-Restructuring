@@ -9,8 +9,8 @@ import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import edu.wpi.first.wpilibj2.command.sysid.SysIdRoutine;
+import frc.robot.Constants.ElevatorConstants;
 import frc.robot.RobotContainer;
-import frc.robot.constants.ElevatorConstants;
 import frc.robot.util.RobotState;
 import org.littletonrobotics.junction.Logger;
 
@@ -29,7 +29,7 @@ public class Elevator extends SubsystemBase {
 
   public Elevator(ElevatorIO io) {
     this.io = io;
-    setDefaultCommand(Commands.run(this::joystickControl));
+    setDefaultCommand(Commands.run(this::joystickControl, this));
   }
 
   @Override
@@ -48,7 +48,6 @@ public class Elevator extends SubsystemBase {
         Math.abs((state.getHeight() - inputs.extensionMeters) / ElevatorConstants.MAX_EXTENSION);
     return Math.pow(percentExtension, 0.3) + 0.8 * percentExtension + 1;
   }
-
 
   /**
    * @return extension of elevator from 0, in meters

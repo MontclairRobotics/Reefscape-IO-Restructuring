@@ -7,7 +7,19 @@
         {
           "type": "path",
           "data": {
-            "pathName": "Example Path"
+            "pathName": "S5-A"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "A-4"
+          }
+        },
+        {
+          "type": "path",
+          "data": {
+            "pathName": "4_a"
           }
         }
       ]

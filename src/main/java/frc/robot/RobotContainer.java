@@ -14,17 +14,30 @@
 package frc.robot;
 
 import com.pathplanner.lib.auto.AutoBuilder;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Pose3d;
+import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.wpilibj.GenericHID;
 import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
-import edu.wpi.first.wpilibj2.command.button.CommandXboxController;
+import frc.robot.Constants.DriveConstants;
+import frc.robot.generated.TunerConstants;
+import frc.robot.subsystems.arm.Arm;
+import frc.robot.subsystems.arm.ArmIOSim;
+import frc.robot.subsystems.arm.ArmIOSparkMax;
+import frc.robot.subsystems.drivetrain.CommandSwerveDrivetrain;
 import frc.robot.subsystems.elevator.Elevator;
 import frc.robot.subsystems.elevator.ElevatorIOSim;
 import frc.robot.subsystems.elevator.ElevatorIOTalonFX;
 import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.rollers.RollersIOSim;
 import frc.robot.subsystems.rollers.RollersIOSparkMax;
+import frc.robot.util.PoseUtils;
+import frc.robot.util.simulation.MapleSimSwerveDrivetrain;
+import org.ironmaple.simulation.SimulatedArena;
+import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
+import org.littletonrobotics.junction.Logger;
 import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
 
 /**
@@ -35,44 +48,62 @@ import org.littletonrobotics.junction.networktables.LoggedDashboardChooser;
  */
 public class RobotContainer {
   // Subsystems
-  public final Rollers rollers;
-  public final Elevator elevator;
+  public static Rollers rollers;
+  public static Elevator elevator;
+  public static Arm arm;
+  public static CommandSwerveDrivetrain drivetrain;
+  public static MapleSimSwerveDrivetrain mapleDrivetrain;
 
-  // Controller
-  public CommandXboxController controller = new CommandXboxController(0);
-  public static CommandPS5Controller operatorController = new CommandPS5Controller(1);
+  private SwerveDriveSimulation driveSimulation = null;
+
+  // Controllers
+  public static final CommandPS5Controller driverController = new CommandPS5Controller(0);
+  public static final CommandPS5Controller operatorController = new CommandPS5Controller(1);
+
+  private final Telemetry logger = new Telemetry(DriveConstants.MAX_SPEED);
 
   // Dashboard inputs
   private final LoggedDashboardChooser<Command> autoChooser;
 
   /** The container for the robot. Contains subsystems, OI devices, and commands. */
+  @SuppressWarnings("unchecked")
   public RobotContainer() {
     switch (Constants.currentMode) {
       case REAL:
         // Real robot, instantiate hardware IO implementations
         rollers = new Rollers(new RollersIOSparkMax());
         elevator = new Elevator(new ElevatorIOTalonFX());
+        arm = new Arm(new ArmIOSparkMax());
 
+        drivetrain = TunerConstants.createDrivetrain();
         break;
 
       case SIM:
         // Sim robot, instantiate physics sim IO implementations
         rollers = new Rollers(new RollersIOSim());
         elevator = new Elevator(new ElevatorIOSim());
+        arm = new Arm(new ArmIOSim());
+        drivetrain = TunerConstants.createDrivetrain();
+
+        driveSimulation = drivetrain.mapleSimSwerveDrivetrain.mapleSimDrive;
 
         break;
 
       default:
         // Replayed robot, disable IO implementations
+        // NOTE: The Pearadox codebase leaves this field unset ?!
+        // See
+        // https://github.com/Pearadox/2025RobotCode/blob/main/src/main/java/frc/robot/RobotContainer.java#L168.
         rollers = new Rollers(null);
         elevator = new Elevator(null);
-
+        arm = new Arm(null);
         break;
     }
 
     // Set up auto routines
     autoChooser = new LoggedDashboardChooser<>("Auto Choices", AutoBuilder.buildAutoChooser());
 
+    // Configure the button bindings
     configureButtonBindings();
   }
 
@@ -82,7 +113,39 @@ public class RobotContainer {
    * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
    * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
    */
-  private void configureButtonBindings() {}
+  private void configureButtonBindings() {
+    // Default command, normal field-relative drive
+    drivetrain.setDefaultCommand(drivetrain.driveJoystickInputCommand());
+
+    // Robot relative
+    driverController
+        .L2()
+        .onTrue(drivetrain.toRobotRelativeCommand())
+        .onFalse(drivetrain.toFieldRelativeCommand());
+
+    // 90 degree buttons
+    driverController
+        .triangle()
+        .onTrue(
+            drivetrain.alignToAngleFieldRelativeCommand(
+                PoseUtils.flipRotAlliance(Rotation2d.fromDegrees(0)), false));
+    driverController
+        .square()
+        .onTrue(drivetrain.alignToAngleFieldRelativeCommand((Rotation2d.fromDegrees(-54)), false));
+    driverController
+        .cross()
+        .onTrue(
+            drivetrain.alignToAngleFieldRelativeCommand(
+                PoseUtils.flipRotAlliance(Rotation2d.fromDegrees(180)), false));
+    driverController
+        .circle()
+        .onTrue(drivetrain.alignToAngleFieldRelativeCommand(Rotation2d.fromDegrees(54), false));
+
+    // zeros gyro
+    driverController.touchpad().onTrue(drivetrain.zeroGyroCommand());
+
+    drivetrain.registerTelemetry(logger::telemeterize);
+  }
 
   /**
    * Use this to pass the autonomous command to the main {@link Robot} class.
@@ -91,5 +154,41 @@ public class RobotContainer {
    */
   public Command getAutonomousCommand() {
     return autoChooser.get();
+  }
+
+  /**
+   * Resets the simulation.
+   *
+   * <p>Borrowed from
+   * https://github.com/Pearadox/2025RobotCode/blob/main/src/main/java/frc/robot/RobotContainer.java#L394.
+   */
+  public void resetSimulation() {
+    if (Constants.currentMode != Constants.Mode.SIM) return;
+
+    drivetrain.resetPose(new Pose2d(12, 2, new Rotation2d()));
+    SimulatedArena.getInstance().resetFieldForAuto();
+    // AlgaeHandler.getInstance().reset();
+  }
+
+  /**
+   * Updates Simulated Arena; to be called from Robot.simulationPeriodic()
+   *
+   * <p>Borrowed from
+   * https://github.com/Pearadox/2025RobotCode/blob/main/src/main/java/frc/robot/RobotContainer.java#L402
+   */
+  public void displaySimFieldToAdvantageScope() {
+    if (Constants.currentMode != Constants.Mode.SIM) return;
+
+    SimulatedArena.getInstance().simulationPeriodic();
+    // The pose by maplesim, including collisions with the field.
+    // See https://www.chiefdelphi.com/t/simulated-robot-goes-through-walls-with-maplesim/508663.
+    Logger.recordOutput(
+        "FieldSimulation/Pose", new Pose3d(driveSimulation.getSimulatedDriveTrainPose()));
+    Logger.recordOutput(
+        "FieldSimulation/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
+    Logger.recordOutput(
+        "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
+    // Logger.recordOutput(
+    //         "FieldSimulation/Staged Algae", AlgaeHandler.getInstance().periodic());
   }
 }

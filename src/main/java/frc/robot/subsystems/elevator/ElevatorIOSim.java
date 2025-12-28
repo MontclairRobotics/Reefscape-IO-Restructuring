@@ -1,8 +1,5 @@
 package frc.robot.subsystems.elevator;
 
-import com.ctre.phoenix6.configs.Slot0Configs;
-import com.ctre.phoenix6.signals.StaticFeedforwardSignValue;
-
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.controller.ElevatorFeedforward;
 import edu.wpi.first.math.controller.ProfiledPIDController;
@@ -14,7 +11,7 @@ import edu.wpi.first.wpilibj.simulation.ElevatorSim;
 import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
 import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
-import frc.robot.constants.ElevatorConstants;
+import frc.robot.Constants.ElevatorConstants;
 
 public class ElevatorIOSim implements ElevatorIO {
 
@@ -25,7 +22,6 @@ public class ElevatorIOSim implements ElevatorIO {
   private double appliedVoltage = 0;
 
   private SlewRateLimiter accelerationLimiter;
-
 
   // for calculating accel
   double lastTime = Timer.getFPGATimestamp();
@@ -128,7 +124,7 @@ public class ElevatorIOSim implements ElevatorIO {
   }
 
   public void resetEncoders(double rotationValue) {
-    sim.setState(0, 0); //TODO: is this correct?
+    sim.setState(0, 0); // TODO: is this correct?
   }
 
   public double stationaryElevatorFFVoltage() {
@@ -147,5 +143,4 @@ public class ElevatorIOSim implements ElevatorIO {
     elevatorFeedforward.setKs(0.058548);
     elevatorFeedforward.setKv(0.10758);
   }
-
 }

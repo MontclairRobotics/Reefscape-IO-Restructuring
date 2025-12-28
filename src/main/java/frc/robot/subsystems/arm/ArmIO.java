@@ -1,9 +1,8 @@
 package frc.robot.subsystems.arm;
 
+import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 import edu.wpi.first.math.geometry.Rotation2d;
 import org.littletonrobotics.junction.AutoLog;
-
-import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 public interface ArmIO {
   @AutoLog
@@ -34,7 +33,7 @@ public interface ArmIO {
    * @return the angle of the endpoint (second joint) relative to the horizontal
    */
   public Rotation2d getForearmAngle();
-  
+
   /**
    * @return the angle between the arm and the forearm (the angle between the two joints)
    */
