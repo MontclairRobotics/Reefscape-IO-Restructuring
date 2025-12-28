@@ -13,6 +13,7 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import com.pathplanner.lib.config.PIDConstants;
 import com.pathplanner.lib.config.RobotConfig;
 import com.pathplanner.lib.controllers.PPHolonomicDriveController;
+import dev.doglog.DogLog;
 import edu.wpi.first.apriltag.AprilTagFieldLayout;
 import edu.wpi.first.apriltag.AprilTagFields;
 import edu.wpi.first.math.MathUtil;
@@ -27,6 +28,7 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.DriverStation.Alliance;
 import edu.wpi.first.wpilibj.Notifier;
+import edu.wpi.first.wpilibj.RobotController;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.Commands;
@@ -39,7 +41,6 @@ import frc.robot.generated.TunerConstants.TunerSwerveDrivetrain;
 import frc.robot.util.PoseUtils;
 import frc.robot.util.simulation.MapleSimSwerveDrivetrain;
 import java.util.function.Supplier;
-import org.ironmaple.simulation.drivesims.configs.DriveTrainSimulationConfig;
 import org.littletonrobotics.junction.AutoLogOutput;
 import org.littletonrobotics.junction.Logger;
 
@@ -120,6 +121,7 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private SysIdRoutine m_sysIdRoutineToApply = m_sysIdRoutineSteer;
 
   private Rotation2d targetHeading = Rotation2d.fromDegrees(0);
+
   public AprilTagFieldLayout tagLayout =
       AprilTagFieldLayout.loadField(AprilTagFields.k2025ReefscapeWelded);
 
@@ -133,12 +135,6 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
   private boolean fieldRelative;
 
   public RobotConfig config;
-
-  // A mapleSimConfig that was carefully crafted to make the CTRE motor simulations play nicely with
-  // maplesim's simulation system. The values were copied from a forum thread that also provides
-  // some additional context for the problem
-  // https://www.chiefdelphi.com/t/maplesim-strange-behavior-need-help/502245/6
-  public static DriveTrainSimulationConfig mapleSimConfig;
 
   /**
    * Constructs a CTRE SwerveDrivetrain using the specified constants.
@@ -413,14 +409,15 @@ public class CommandSwerveDrivetrain extends TunerSwerveDrivetrain implements Su
               });
     }
 
-    // DogLog.log("BatteryVoltage", RobotController.getBatteryVoltage());
-    // DogLog.log("Drive/OdometryPose", getState().Pose);
-    // DogLog.log("Drive/TargetStates", getState().ModuleTargets);
-    // DogLog.log("Drive/MeasuredStates", getState().ModuleStates);
-    // DogLog.log("Drive/MeasuredSpeeds", getState().Speeds);
-    // if (mapleSimSwerveDrivetrain != null)
-    //     DogLog.log("Drive/SimulationPose",
-    // mapleSimSwerveDrivetrain.mapleSimDrive.getSimulatedDriveTrainPose());
+    DogLog.log("BatteryVoltage", RobotController.getBatteryVoltage());
+    DogLog.log("Drive/OdometryPose", getState().Pose);
+    DogLog.log("Drive/TargetStates", getState().ModuleTargets);
+    DogLog.log("Drive/MeasuredStates", getState().ModuleStates);
+    DogLog.log("Drive/MeasuredSpeeds", getState().Speeds);
+    if (mapleSimSwerveDrivetrain != null)
+      DogLog.log(
+          "Drive/SimulationPose",
+          mapleSimSwerveDrivetrain.mapleSimDrive.getSimulatedDriveTrainPose());
   }
 
   public MapleSimSwerveDrivetrain mapleSimSwerveDrivetrain = null;

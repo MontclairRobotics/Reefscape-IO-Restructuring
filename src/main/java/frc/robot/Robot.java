@@ -16,7 +16,10 @@ package frc.robot;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.DriveMotorArrangement;
 import com.ctre.phoenix6.swerve.SwerveModuleConstants.SteerMotorArrangement;
+import dev.doglog.DogLog;
+import dev.doglog.DogLogOptions;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.PowerDistribution;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.CommandScheduler;
 import frc.robot.generated.TunerConstants;
@@ -89,6 +92,7 @@ public class Robot extends LoggedRobot {
           TunerConstants.BackLeft,
           TunerConstants.BackRight
         };
+
     for (var constants : modules) {
       if (constants.DriveMotorType != DriveMotorArrangement.TalonFX_Integrated
           || constants.SteerMotorType != SteerMotorArrangement.TalonFX_Integrated) {
@@ -105,6 +109,13 @@ public class Robot extends LoggedRobot {
   /** Code to run on robot boot up. */
   @Override
   public void robotInit() {
+    DogLog.setOptions(
+        new DogLogOptions()
+            .withLogExtras(true)
+            .withCaptureDs(true)
+            .withNtPublish(true)
+            .withCaptureNt(true));
+    DogLog.setPdh(new PowerDistribution());
     if (isSimulation()) {
       // Do not spam the logs with "Button x on port y not available" log messages.
       DriverStation.silenceJoystickConnectionWarning(true);
