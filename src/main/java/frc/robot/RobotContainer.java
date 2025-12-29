@@ -17,9 +17,8 @@ import com.pathplanner.lib.auto.AutoBuilder;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Pose3d;
 import edu.wpi.first.math.geometry.Rotation2d;
-import edu.wpi.first.wpilibj.GenericHID;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj2.command.Command;
+import edu.wpi.first.wpilibj2.command.Commands;
 import edu.wpi.first.wpilibj2.command.button.CommandPS5Controller;
 import frc.robot.Constants.DriveConstants;
 import frc.robot.generated.TunerConstants;
@@ -34,6 +33,7 @@ import frc.robot.subsystems.rollers.Rollers;
 import frc.robot.subsystems.rollers.RollersIOSim;
 import frc.robot.subsystems.rollers.RollersIOSparkMax;
 import frc.robot.util.PoseUtils;
+import frc.robot.util.RobotState;
 import frc.robot.util.simulation.MapleSimSwerveDrivetrain;
 import org.ironmaple.simulation.SimulatedArena;
 import org.ironmaple.simulation.drivesims.SwerveDriveSimulation;
@@ -107,12 +107,6 @@ public class RobotContainer {
     configureButtonBindings();
   }
 
-  /**
-   * Use this method to define your button->command mappings. Buttons can be created by
-   * instantiating a {@link GenericHID} or one of its subclasses ({@link
-   * edu.wpi.first.wpilibj.Joystick} or {@link XboxController}), and then passing it to a {@link
-   * edu.wpi.first.wpilibj2.command.button.JoystickButton}.
-   */
   private void configureButtonBindings() {
     // Default command, normal field-relative drive
     drivetrain.setDefaultCommand(drivetrain.driveJoystickInputCommand());
@@ -143,6 +137,54 @@ public class RobotContainer {
 
     // zeros gyro
     driverController.touchpad().onTrue(drivetrain.zeroGyroCommand());
+
+    // L1 Manual
+    operatorController
+        .cross()
+        .and(operatorController.L2().negate())
+        .whileTrue(arm.holdState(RobotState.L1))
+        .onFalse(
+            elevator
+                .setState(RobotState.L1)
+                .alongWith(elevator.setTargetState(RobotState.L1))
+                .alongWith(arm.holdState(RobotState.L1)));
+
+    // L2 Manual
+    operatorController
+        .square()
+        .and(operatorController.L2().negate())
+        .whileTrue(arm.holdState(RobotState.L2))
+        .onFalse(
+            elevator
+                .setState(RobotState.L2)
+                .alongWith(elevator.setTargetState(RobotState.L2))
+                .alongWith(arm.holdState(RobotState.L2)));
+
+    // L3 Manual
+    operatorController
+        .triangle()
+        .and(operatorController.L2().negate())
+        .whileTrue((arm.holdState(RobotState.L3)))
+        .onFalse(
+            elevator
+                .setState(RobotState.L3)
+                .alongWith(elevator.setTargetState(RobotState.L3))
+                .alongWith(arm.holdState(RobotState.L3)));
+
+    operatorController
+        .touchpad()
+        .onTrue(
+            Commands.runOnce(
+                () -> {
+                  arm.setDefaultCommand(arm.joystickControlCommand());
+                }));
+
+    // L4 Manual
+    operatorController
+        .circle()
+        .and(operatorController.L2().negate())
+        .whileTrue(arm.holdState(RobotState.L4).alongWith(elevator.setState(RobotState.L3)))
+        .onFalse(elevator.setState(RobotState.L4).alongWith(arm.holdState(RobotState.L4)));
 
     drivetrain.registerTelemetry(logger::telemeterize);
   }
@@ -188,7 +230,5 @@ public class RobotContainer {
         "FieldSimulation/Coral", SimulatedArena.getInstance().getGamePiecesArrayByType("Coral"));
     Logger.recordOutput(
         "FieldSimulation/Algae", SimulatedArena.getInstance().getGamePiecesArrayByType("Algae"));
-    // Logger.recordOutput(
-    //         "FieldSimulation/Staged Algae", AlgaeHandler.getInstance().periodic());
   }
 }

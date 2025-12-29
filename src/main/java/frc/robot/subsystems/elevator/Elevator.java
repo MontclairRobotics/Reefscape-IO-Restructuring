@@ -21,6 +21,7 @@ public class Elevator extends SubsystemBase {
   // are simulating or not
   private final ElevatorIOInputsAutoLogged inputs =
       new ElevatorIOInputsAutoLogged(); // inputs, auto logged
+  private ElevatorVisualization visualizer;
 
   private double setpoint = 0; // keeps track of setpoint
 
@@ -29,6 +30,7 @@ public class Elevator extends SubsystemBase {
 
   public Elevator(ElevatorIO io) {
     this.io = io;
+    this.visualizer = new ElevatorVisualization();
     setDefaultCommand(Commands.run(this::joystickControl, this));
   }
 
@@ -36,6 +38,8 @@ public class Elevator extends SubsystemBase {
   public void periodic() {
     io.updateInputs(inputs);
     Logger.processInputs("Elevator", inputs);
+    visualizer.update(inputs);
+    visualizer.log();
   }
 
   /**

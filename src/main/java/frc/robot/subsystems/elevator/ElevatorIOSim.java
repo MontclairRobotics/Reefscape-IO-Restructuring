@@ -8,9 +8,6 @@ import edu.wpi.first.math.system.plant.DCMotor;
 import edu.wpi.first.math.trajectory.TrapezoidProfile.Constraints;
 import edu.wpi.first.wpilibj.Timer;
 import edu.wpi.first.wpilibj.simulation.ElevatorSim;
-import edu.wpi.first.wpilibj.smartdashboard.Mechanism2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismLigament2d;
-import edu.wpi.first.wpilibj.smartdashboard.MechanismRoot2d;
 import frc.robot.Constants.ElevatorConstants;
 
 public class ElevatorIOSim implements ElevatorIO {
@@ -30,11 +27,6 @@ public class ElevatorIOSim implements ElevatorIO {
   // PID + FF
   private ProfiledPIDController pidController;
   public ElevatorFeedforward elevatorFeedforward;
-
-  // Visualization
-  private Mechanism2d mechanism;
-  private MechanismRoot2d rootMechanism;
-  private MechanismLigament2d elevatorMechanism;
 
   // for modeling elevator movement
   private ElevatorSim sim =
@@ -66,13 +58,6 @@ public class ElevatorIOSim implements ElevatorIO {
             0,
             0.068398,
             new Constraints(ElevatorConstants.MAX_VELOCITY_RPS, ElevatorConstants.MAX_ACCEL_RPS));
-
-    // Visualization
-    mechanism = new Mechanism2d(4, 4);
-    rootMechanism = mechanism.getRoot("ElevatorBottom", 2, 0);
-    elevatorMechanism =
-        rootMechanism.append(
-            new MechanismLigament2d("Elevator", ElevatorConstants.STARTING_HEIGHT, 90));
   }
 
   @Override
@@ -99,20 +84,16 @@ public class ElevatorIOSim implements ElevatorIO {
         pidController.calculate(
             sim.getPositionMeters() * ElevatorConstants.ROTATIONS_PER_METER, goalRotations);
 
-    // for calculating FF
     double accel =
         (pidController.getSetpoint().velocity * ElevatorConstants.METERS_PER_ROTATION
                 - lastVelocity)
             / (Timer.getFPGATimestamp() - lastTime);
 
-    // Updates values for calculating accel
     lastTime = Timer.getFPGATimestamp();
     lastVelocity = sim.getVelocityMetersPerSecond();
 
-    // FF
     double ffVoltage = elevatorFeedforward.calculate(pidController.getSetpoint().velocity, accel);
 
-    // Adds FF + PID voltages
     double outputVoltage = MathUtil.clamp(pidOutputVoltage + ffVoltage, -12, 12);
 
     appliedVoltage = outputVoltage; // logs voltage
